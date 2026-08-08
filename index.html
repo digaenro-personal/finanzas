@@ -320,7 +320,7 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbxKt-nw6K4BsxfaHyDFs4x70H0kBCqzffyHumqGzsZpju70cn8yIIUl_vh52P-CLFtB_w/exec';
+const API = 'https://script.google.com/macros/s/AKfycbwZ-U2uMev9f-zBeF8jZ-zG4zU2-N3e0eCHtIpn-Hq_FIBiS7kpKkUkHNk0yT68dxtIeA/exec';
 const KEY = 'diegui2026';
 
 const CATS = {
@@ -414,19 +414,20 @@ function setSyncStatus(state, msg) {
 async function enviarASheet(movs) {
   setSyncStatus('loading', 'Guardando en Sheets...');
   try {
-    const resp = await fetch(API, {
+    const payload = JSON.stringify({ key: KEY, movimientos: movs });
+    const form = new FormData();
+    form.append('data', payload);
+
+    await fetch(API, {
       method: 'POST',
-      body: JSON.stringify({ key: KEY, movimientos: movs }),
-      headers: { 'Content-Type': 'application/json' }
+      mode: 'no-cors',
+      body: payload,
+      headers: { 'Content-Type': 'text/plain' }
     });
-    const data = await resp.json();
-    if(data.status === 'ok') {
-      setSyncStatus('ok', 'Guardado en Sheets ✓');
-      return true;
-    } else {
-      setSyncStatus('err', 'Error al guardar');
-      return false;
-    }
+
+    // no-cors means we can't read the response — assume ok if no exception
+    setSyncStatus('ok', 'Guardado en Sheets ✓');
+    return true;
   } catch(e) {
     setSyncStatus('err', 'Sin conexión — guardado local');
     return false;
