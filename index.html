@@ -320,7 +320,9 @@
 <div class="toast" id="toast"></div>
 
 <script>
-const API = 'https://script.google.com/macros/s/AKfycbwZ-U2uMev9f-zBeF8jZ-zG4zU2-N3e0eCHtIpn-Hq_FIBiS7kpKkUkHNk0yT68dxtIeA/exec';
+// ⚠️ REEMPLAZA esta URL con la que te da "Desplegar → Nueva implementación"
+// en el Apps Script de la hoja NUEVA (ver Code.gs)
+const API = 'https://script.google.com/macros/s/AKfycbySPiksGkAp6KEyEhk-cHTZQALu1QLqjkQ6t57PDoCvwLElIOlk8LO3sy76ZieEAp5i/exec';
 const KEY = 'diegui2026';
 
 const CATS = {
@@ -329,6 +331,11 @@ const CATS = {
   Pago: ['Crédito W 22106','Crédito W 19619','Máster','Sobrinos','Arriendo','Servicios dpto','Medicamentos MF','Medicamentos Piel','Deuda TC','Addi','Crédito Cesmag','Salud y Pensión'],
   Transferencia: ['Retiro Efectivo','Avance','Ahorro']
 };
+
+// Dirección automática por tipo. 'Transferencia' desde el tab Registrar
+// queda sin dirección definida — usa el tab "Transferir" para eso,
+// que sí genera las 2 filas con dirección correcta.
+const DIRECCION_POR_TIPO = { Gasto: 'Salida', Ingreso: 'Entrada', Pago: 'Salida', Transferencia: '' };
 
 const TIPO_CLS = { Gasto:'act-gasto', Ingreso:'act-ingreso', Pago:'act-pago', Transferencia:'act-transfer' };
 const CHIP_CLS = { Gasto:'sel-gasto', Ingreso:'sel-ingreso', Pago:'sel-pago', Transferencia:'sel-transfer' };
@@ -415,8 +422,6 @@ async function enviarASheet(movs) {
   setSyncStatus('loading', 'Guardando en Sheets...');
   try {
     const payload = JSON.stringify({ key: KEY, movimientos: movs });
-    const form = new FormData();
-    form.append('data', payload);
 
     await fetch(API, {
       method: 'POST',
@@ -444,6 +449,7 @@ async function guardar() {
     id: Date.now(),
     fecha, mes,
     tipo: tipoSel,
+    direccion: DIRECCION_POR_TIPO[tipoSel] || '',
     monto,
     categoria: catSel,
     medio: document.getElementById('r-medio').value,
@@ -477,8 +483,8 @@ async function transferir() {
   const fecha = hoy();
   const mes = mesActual();
 
-  const mov1 = { id: Date.now(), fecha, mes, tipo: 'Transferencia Out', monto, categoria: cat, medio: desde, descripcion: desc || `A ${hacia}` };
-  const mov2 = { id: Date.now()+1, fecha, mes, tipo: 'Transferencia In', monto, categoria: cat, medio: hacia, descripcion: desc || `Desde ${desde}` };
+  const mov1 = { id: Date.now(), fecha, mes, tipo: 'Transferencia', direccion: 'Salida', monto, categoria: cat, medio: desde, descripcion: desc || `A ${hacia}` };
+  const mov2 = { id: Date.now()+1, fecha, mes, tipo: 'Transferencia', direccion: 'Entrada', monto, categoria: cat, medio: hacia, descripcion: desc || `Desde ${desde}` };
 
   movimientos.unshift(mov2);
   movimientos.unshift(mov1);
@@ -532,9 +538,8 @@ function renderDash() {
   const medios = {};
   del_mes.forEach(m => {
     if(!medios[m.medio]) medios[m.medio] = { in: 0, out: 0 };
-    if(m.tipo==='Ingreso' || m.tipo==='Transferencia In') medios[m.medio].in += m.monto;
-    else if(m.tipo==='Transferencia Out') medios[m.medio].out += m.monto;
-    else medios[m.medio].out += m.monto;
+    if(m.direccion === 'Entrada') medios[m.medio].in += m.monto;
+    else if(m.direccion === 'Salida') medios[m.medio].out += m.monto;
   });
 
   const mediosEl = document.getElementById('d-medios');
@@ -566,14 +571,13 @@ function renderHistorial() {
     Gasto: { bg: 'var(--danger-bg)', c: 'var(--danger)', prefix: '-' },
     Ingreso: { bg: 'var(--success-bg)', c: 'var(--success)', prefix: '+' },
     Pago: { bg: 'var(--warning-bg)', c: 'var(--warning)', prefix: '-' },
-    'Transferencia Out': { bg: 'var(--accent-bg)', c: 'var(--accent)', prefix: '→' },
-    'Transferencia In': { bg: 'var(--accent-bg)', c: 'var(--accent)', prefix: '←' },
     Transferencia: { bg: 'var(--accent-bg)', c: 'var(--accent)', prefix: '↔' }
   };
 
   let lastMes = '';
   el.innerHTML = movimientos.slice(0,60).map(m => {
     const col = colors[m.tipo] || colors.Gasto;
+    const prefix = m.tipo === 'Transferencia' ? (m.direccion === 'Entrada' ? '←' : '→') : col.prefix;
     let header = '';
     if(m.mes !== lastMes) {
       lastMes = m.mes;
@@ -583,10 +587,10 @@ function renderHistorial() {
       <div style="flex:1">
         <div class="list-main">${m.categoria}</div>
         <div class="list-sub">${m.fecha} · ${m.medio}${m.descripcion ? ' · ' + m.descripcion : ''}</div>
-        <span class="list-badge" style="background:${col.bg};color:${col.c}">${m.tipo}</span>
+        <span class="list-badge" style="background:${col.bg};color:${col.c}">${m.tipo}${m.direccion ? ' · ' + m.direccion : ''}</span>
       </div>
       <div style="display:flex;align-items:center;gap:10px">
-        <div class="list-amt" style="color:${col.c}">${col.prefix}${fmt(m.monto)}</div>
+        <div class="list-amt" style="color:${col.c}">${prefix}${fmt(m.monto)}</div>
         <button class="btn-delete" onclick="borrar(${m.id})" title="Eliminar">×</button>
       </div>
     </div>`;
@@ -594,9 +598,9 @@ function renderHistorial() {
 }
 
 function exportar() {
-  const header = 'Fecha\tMes\tTipo\tMonto\tCategoría\tMedio de pago\tDescripción';
+  const header = 'Fecha\tMes\tTipo\tDirección\tMonto\tCategoría\tMedio de pago\tDescripción';
   const rows = movimientos.map(m =>
-    `${m.fecha}\t${m.mes}\t${m.tipo}\t${m.monto}\t${m.categoria}\t${m.medio}\t${m.descripcion}`
+    `${m.fecha}\t${m.mes}\t${m.tipo}\t${m.direccion || ''}\t${m.monto}\t${m.categoria}\t${m.medio}\t${m.descripcion}`
   );
   const txt = [header, ...rows].join('\n');
   navigator.clipboard.writeText(txt)
