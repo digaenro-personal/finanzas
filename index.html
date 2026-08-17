@@ -66,7 +66,7 @@
   .chip.sel-cat { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); }
 
   /* Tipo selector */
-  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .tipo-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
   .tipo-btn { padding: 14px 10px; border-radius: var(--radius); border: 0.5px solid var(--border); background: var(--surface); color: var(--muted); font-size: 14px; font-weight: 600; cursor: pointer; text-align: center; transition: all 0.15s; }
   .tipo-btn span { display: block; font-size: 11px; font-weight: 400; margin-top: 2px; opacity: 0.7; }
   .tipo-btn.act-gasto { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
@@ -193,8 +193,8 @@
         <button class="tipo-btn act-gasto" onclick="selTipo('Gasto',this)">Gasto<span>Compras del día</span></button>
         <button class="tipo-btn" onclick="selTipo('Ingreso',this)">Ingreso<span>Dinero que entra</span></button>
         <button class="tipo-btn" onclick="selTipo('Pago',this)">Pago<span>Deudas fijas</span></button>
-        <button class="tipo-btn" onclick="selTipo('Transferencia',this)">Transferencia<span>Entre mis medios</span></button>
       </div>
+      <p style="text-align:center;font-size:12px;color:var(--muted);margin-top:8px">¿Moviendo dinero entre tus medios? Usa el tab "Transferir"</p>
     </div>
 
     <div class="field" id="cat-field">
