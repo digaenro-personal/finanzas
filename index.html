@@ -1,30 +1,30 @@
 <!DOCTYPE html>
-<!-- FinAppDiego V1.2 — 2026-10-20 — Nueva tab Liquidez: saldos por medio (Efectivo, TD, Nequi, Daviplata) y cupo disponible de TCs, leídos desde la hoja -->
+<!-- FinAppDiego V1.3 — 2026-10-20 — Tema claro con acentos azul oscuro (solo colores; V1.2 agregó la tab Liquidez) -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#0a0f1a">
-<title>FinAppDiego V1.2</title>
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#eef1f7">
+<title>FinAppDiego V1.3</title>
 <style>
   :root {
-    --bg: #0a0f1a;
-    --surface: #111827;
-    --surface2: #1a2235;
-    --border: rgba(255,255,255,0.08);
-    --text: #f0f4ff;
-    --muted: #6b7a99;
-    --accent: #3b82f6;
-    --accent-bg: rgba(59,130,246,0.12);
-    --success: #22c55e;
-    --success-bg: rgba(34,197,94,0.12);
-    --danger: #ef4444;
-    --danger-bg: rgba(239,68,68,0.12);
-    --warning: #f59e0b;
-    --warning-bg: rgba(245,158,11,0.12);
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface2: #e4e9f2;
+    --border: rgba(15,23,42,0.14);
+    --text: #0f172a;
+    --muted: #5b6b86;
+    --accent: #1e3a8a;
+    --accent-bg: rgba(30,58,138,0.10);
+    --success: #15803d;
+    --success-bg: rgba(21,128,61,0.12);
+    --danger: #dc2626;
+    --danger-bg: rgba(220,38,38,0.10);
+    --warning: #b45309;
+    --warning-bg: rgba(180,83,9,0.12);
     --radius: 12px;
     --radius-sm: 8px;
   }
@@ -54,7 +54,7 @@
   input, select { width: 100%; background: var(--surface); border: 0.5px solid var(--border); border-radius: var(--radius-sm); color: var(--text); font-size: 15px; padding: 11px 14px; outline: none; -webkit-appearance: none; appearance: none; font-family: inherit; }
   input:focus, select:focus { border-color: var(--accent); }
   input[type=number] { font-size: 28px; font-weight: 600; text-align: center; padding: 16px; letter-spacing: -0.5px; }
-  input[type=date] { font-size: 14px; color-scheme: dark; }
+  input[type=date] { font-size: 14px; color-scheme: light; }
   select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7a99' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 36px; }
 
   /* Chip grid */
@@ -148,6 +148,9 @@
   .btn-delete { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 16px; line-height: 1; transition: color 0.15s, background 0.15s; }
   .btn-delete:active { color: var(--danger); background: var(--danger-bg); }
 
+  /* Tarjetas con sombra suave (tema claro) */
+  .stat-card, .tc-card, .liq-total, .monto-wrap, .month-nav { box-shadow: 0 1px 2px rgba(15,23,42,0.06); }
+
   /* Liquidez */
   .liq-total { background: var(--surface); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 4px; }
   .liq-total .stat-val { font-size: 28px; }
@@ -175,7 +178,7 @@
 <div class="header">
   <h1>FinAppDiego <span class="sync-dot" id="sync-dot"></span></h1>
   <p id="sync-status">Listo para registrar</p>
-  <p style="font-size:10px;color:var(--muted);margin-top:4px;opacity:0.6">V1.2</p>
+  <p style="font-size:10px;color:var(--muted);margin-top:4px;opacity:0.6">V1.3</p>
 </div>
 
 <nav class="nav">
