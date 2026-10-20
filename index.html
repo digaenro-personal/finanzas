@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<!-- FinAppDiego V1.1 — 2026-09-25 — Agregada categoría 'Movimiento de Fondos' en Transferir; renombrado a FinAppDiego -->
+<!-- FinAppDiego V1.2 — 2026-10-20 — Nueva tab Liquidez: saldos por medio (Efectivo, TD, Nequi, Daviplata) y cupo disponible de TCs, leídos desde la hoja -->
 <html lang="es">
 <head>
 <meta charset="UTF-8">
@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="theme-color" content="#0a0f1a">
-<title>FinAppDiego V1.1</title>
+<title>FinAppDiego V1.2</title>
 <style>
   :root {
     --bg: #0a0f1a;
@@ -148,6 +148,23 @@
   .btn-delete { background: none; border: none; color: var(--muted); cursor: pointer; padding: 6px; border-radius: 6px; font-size: 16px; line-height: 1; transition: color 0.15s, background 0.15s; }
   .btn-delete:active { color: var(--danger); background: var(--danger-bg); }
 
+  /* Liquidez */
+  .liq-total { background: var(--surface); border-radius: var(--radius); padding: 16px; text-align: center; margin-bottom: 4px; }
+  .liq-total .stat-val { font-size: 28px; }
+  .liq-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 0.5px solid var(--border); }
+  .liq-row:last-child { border-bottom: none; }
+  .liq-name { font-size: 14px; font-weight: 500; }
+  .liq-val { font-size: 16px; font-weight: 600; }
+  .tc-card { background: var(--surface); border-radius: var(--radius); padding: 14px; margin-bottom: 10px; }
+  .tc-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .tc-name { font-size: 14px; font-weight: 500; }
+  .tc-disp { font-size: 18px; font-weight: 700; color: var(--success); }
+  .tc-bar { height: 6px; background: var(--surface2); border-radius: 3px; margin: 10px 0 6px; overflow: hidden; }
+  .tc-bar > div { height: 100%; background: var(--warning); border-radius: 3px; }
+  .tc-meta { display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); }
+  .liq-foot { font-size: 11px; color: var(--muted); text-align: center; margin-top: 14px; line-height: 1.5; }
+  .liq-err { background: var(--danger-bg); color: var(--danger); border-radius: var(--radius-sm); padding: 10px 14px; font-size: 13px; margin-bottom: 14px; }
+
   @media (min-width: 481px) {
     body { border-left: 0.5px solid var(--border); border-right: 0.5px solid var(--border); min-height: 100vh; }
   }
@@ -158,7 +175,7 @@
 <div class="header">
   <h1>FinAppDiego <span class="sync-dot" id="sync-dot"></span></h1>
   <p id="sync-status">Listo para registrar</p>
-  <p style="font-size:10px;color:var(--muted);margin-top:4px;opacity:0.6">V1.1</p>
+  <p style="font-size:10px;color:var(--muted);margin-top:4px;opacity:0.6">V1.2</p>
 </div>
 
 <nav class="nav">
@@ -173,6 +190,10 @@
   <button class="nav-btn" onclick="showTab('dashboard')" id="nav-dashboard">
     <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
     Resumen
+  </button>
+  <button class="nav-btn" onclick="showTab('liquidez')" id="nav-liquidez">
+    <svg viewBox="0 0 24 24"><rect x="2" y="6" width="20" height="13" rx="2"/><path d="M2 10h20"/><path d="M6 15h4"/></svg>
+    Liquidez
   </button>
   <button class="nav-btn" onclick="showTab('historial')" id="nav-historial">
     <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
@@ -312,6 +333,28 @@
     <div id="d-medios"></div>
   </div>
 
+  <!-- LIQUIDEZ -->
+  <div class="section" id="tab-liquidez">
+    <div id="liq-error"></div>
+
+    <div class="sec-title">Dinero disponible</div>
+    <div class="liq-total">
+      <div class="stat-label">Total en efectivo y cuentas</div>
+      <div class="stat-val" id="liq-total">—</div>
+    </div>
+    <div id="liq-medios"></div>
+
+    <div class="sec-title">Cupo disponible en tarjetas</div>
+    <div class="liq-total">
+      <div class="stat-label">Total cupo disponible</div>
+      <div class="stat-val val-in" id="tc-total">—</div>
+    </div>
+    <div id="liq-tarjetas" style="margin-top:10px"></div>
+
+    <div class="liq-foot" id="liq-foot"></div>
+    <button class="btn-outline" id="btn-liq" onclick="cargarLiquidez(true)">Actualizar</button>
+  </div>
+
   <!-- HISTORIAL -->
   <div class="section" id="tab-historial">
     <div id="historial-list"></div>
@@ -378,6 +421,80 @@ function showTab(tab) {
   document.getElementById('nav-' + tab).classList.add('active');
   if(tab === 'dashboard') renderDash();
   if(tab === 'historial') renderHistorial();
+  if(tab === 'liquidez') cargarLiquidez(false);
+}
+
+// ---------- LIQUIDEZ (lee desde la hoja vía doGet) ----------
+let liqData = JSON.parse(localStorage.getItem('fin_liq') || 'null');
+
+function horaCorta(iso) {
+  const d = new Date(iso);
+  if (isNaN(d)) return '';
+  return d.toLocaleString('es-CO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderLiquidez(errMsg) {
+  const errEl = document.getElementById('liq-error');
+  errEl.innerHTML = errMsg ? `<div class="liq-err">${errMsg}</div>` : '';
+
+  if(!liqData) {
+    document.getElementById('liq-total').textContent = '—';
+    document.getElementById('tc-total').textContent = '—';
+    document.getElementById('liq-medios').innerHTML = '';
+    document.getElementById('liq-tarjetas').innerHTML = '';
+    document.getElementById('liq-foot').textContent = '';
+    return;
+  }
+
+  const medios = liqData.medios || [];
+  const totalDinero = medios.reduce((s, m) => s + m.saldo, 0);
+  const totEl = document.getElementById('liq-total');
+  totEl.textContent = fmt(totalDinero);
+  totEl.className = 'stat-val ' + (totalDinero >= 0 ? 'val-in' : 'val-out');
+
+  document.getElementById('liq-medios').innerHTML = medios.map(m =>
+    `<div class="liq-row"><span class="liq-name">${m.nombre}</span><span class="liq-val ${m.saldo >= 0 ? 'val-in' : 'val-out'}">${fmt(m.saldo)}</span></div>`
+  ).join('');
+
+  const tcs = liqData.tarjetas || [];
+  document.getElementById('tc-total').textContent = fmt(tcs.reduce((s, t) => s + t.disponible, 0));
+  document.getElementById('liq-tarjetas').innerHTML = tcs.map(t => {
+    const pct = t.cupo > 0 ? Math.min(100, Math.max(0, Math.round((t.usado / t.cupo) * 100))) : 0;
+    return `<div class="tc-card">
+      <div class="tc-head"><span class="tc-name">${t.nombre}</span><span class="tc-disp">${fmt(t.disponible)}</span></div>
+      <div class="tc-bar"><div style="width:${pct}%"></div></div>
+      <div class="tc-meta"><span>Usado ${fmt(t.usado)} (${pct}%)</span><span>Cupo ${fmt(t.cupo)}</span></div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('liq-foot').innerHTML =
+    `Actualizado ${horaCorta(liqData.actualizado)}<br>Mes de referencia en la hoja: ${liqData.mesRef || '—'}`;
+}
+
+async function cargarLiquidez(manual) {
+  renderLiquidez();
+  const btn = document.getElementById('btn-liq');
+  btn.textContent = 'Actualizando...';
+  btn.disabled = true;
+  setSyncStatus('loading', 'Leyendo saldos de Sheets...');
+  try {
+    const res = await fetch(API + '?key=' + encodeURIComponent(KEY) + '&accion=liquidez');
+    const data = await res.json();
+    if(!data.ok) throw new Error(data.error || 'Respuesta inválida');
+    liqData = data;
+    localStorage.setItem('fin_liq', JSON.stringify(data));
+    renderLiquidez();
+    setSyncStatus('ok', 'Saldos actualizados ✓');
+    if(manual) toast('Liquidez actualizada');
+  } catch(e) {
+    const msg = liqData
+      ? 'No pude actualizar — mostrando el último dato guardado.'
+      : 'No pude leer los saldos de la hoja. Revisa tu conexión y que el Apps Script tenga la versión nueva publicada.';
+    renderLiquidez(msg);
+    setSyncStatus('err', 'No se pudo leer Liquidez');
+  }
+  btn.textContent = 'Actualizar';
+  btn.disabled = false;
 }
 
 function selTipo(tipo, el) {
